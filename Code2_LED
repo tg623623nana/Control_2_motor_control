@@ -1,0 +1,143 @@
+#include "mbed.h"
+
+
+//----------------------------------------------------------------
+//----------------- Hardware Declaration -------------------
+//----------------------------------------------------------------
+Serial bt(USBTX, USBRX);
+DigitalOut myled1(A4);    
+DigitalOut myled2(A5);   
+Ticker tim;
+
+//----------------------------------------------------------------
+//--------------------- System variable ------------------------
+//----------------------------------------------------------------
+float blink_sec = 0.5;
+char c ;   //宣告一字元(變數)c
+
+
+//----------------------------------------------------------------
+//--------------------- function zone ------------------------
+//----------------------------------------------------------------
+
+void init_TIMER();
+void init_UART();
+void uart_rx_itr_read();
+void timer_ITR();
+
+
+
+int main() {
+    init_UART();
+    init_TIMER();
+    
+    while(1) {
+        uart_rx_itr_read();
+    }
+}
+
+
+
+void init_UART(){
+    bt.baud(115200); 
+    bt.attach(&uart_rx_itr_read, Serial::RxIrq);
+    printf("UART OK\r\n");
+    
+}
+
+
+void uart_rx_itr_read(){
+    
+    if(bt.readable()) {
+        c = bt.getc();   //將輸入值指給c(將輸入值存在c)
+        if(c == '1'){         //當輸入1，此重點為''的使用
+            blink_sec = 0.5 ;    //blink_sec變成0.5，即下面判斷aa小於多少秒的秒數改變了，以此來達到延長交替閃爍時間的效果
+        }else if( c == '2'){     //當輸入2
+            blink_sec = 2 ;      //blink_sec變成2
+        }else{
+            bt.printf("Wrong command.\r\n");
+        }
+        
+    }
+    
+}  
+/*此循環會不斷重複，所以會不斷是否有讀到，將讀到的值回傳並存在c(指給c)，然後判定，判定完又回到開頭循環
+    *依次序判定，一個成立則跳出if迴圈
+    *if  輸入1，做blink_sec變成0.5
+    *else if  輸入2，做blink_sec變成0.5
+    *else printf("Wrong command")
+
+
+            
+void init_TIMER()
+{
+    tim.attach_us(&timer_ITR, 1000); // the address of the function to be attached (timer1_ITR) and the interval (1000 micro-seconds)
+}
+
+
+void timer_ITR(){
+    static int aa = 0;      
+    aa++;                   
+    if(aa < blink_sec*1000) {      
+        myled1 = 1;
+        myled2 = 0;
+        
+    }
+    else {
+        if(aa < blink_sec*2000){
+            myled1 = 0;
+            myled2 = 1;
+            }
+        else aa = 0;
+    }
+//    bt.printf("%d\r\n",aa);
+}
+
+/*先宣告變數aa=0
+ *aa加1
+ *最開始定blink_sec為0.5
+ *if,else if,else中，先判定當aa小於0.5*1000=500，myled1亮，myled2暗，做完跳出if迴圈，循環至void timer_ITR()的開頭，宣告、做aa++、判定，一直做此動作至aa>500
+ *當a>500，if不成立，判斷else if，當aa小於0.5*2000=1000，myled1暗，myled2亮，做完跳出else if迴圈，循環至開頭，重複做至aa>1000
+ *aa>1000，進入else判定，將0只給aa，aa==0
+ *循環至開頭，aa由0開始aa++，又重複if判定，循環至不成立進入else if判定，循環至不成立進入else判定，即循環會不斷重複
+ *即myled1亮500毫秒(0.5秒)，換myled2亮500毫秒(0.5秒)，又換myled1亮500毫秒.....，以0.5秒交替閃爍
+ */
+
+/*我之前的麻煩想法(學學上面)
+void uart_rx_itr_read(){
+    
+    while(bt.readable()) {
+        if(bt.getc())
+        {
+            wait(2);
+            if (myled1=1)
+            {
+                while(myled1=1)
+                {
+                    myled1 = 0;
+                    myled2 = 1;
+                    wait(2);
+                    myled1 = 1;
+                    myled2 = 0;
+                    wait(2);
+                }
+            } 
+            if  (myled2=1)
+            {
+                while(myled2=1)
+                {
+                    myled1 = 1;
+                    myled2 = 0;
+                    wait(2);
+                    myled1 = 0;
+                    myled2 = 1;
+                    wait(2);
+                }
+            }  
+        }
+    }   
+}
+ 
+ 
+ 
+ 
